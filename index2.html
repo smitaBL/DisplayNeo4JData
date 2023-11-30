@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Test Data Network Graph</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+
+<body>
+    <svg id="graph"></svg>
+
+    <script>
+        // Define the test data (nodes and links)
+        const testNodes = [
+            { id: 'A' },
+            { id: 'B' },
+            { id: 'C' },
+            { id: 'D' }
+        ];
+
+        const testLinks = [
+            { source: 'A', target: 'B' },
+            { source: 'B', target: 'C' },
+            { source: 'C', target: 'D' },
+            { source: 'D', target: 'A' }
+        ];
+
+        // Define the SVG container dimensions
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        // Create an SVG container
+        const svg = d3.select('#graph')
+            .attr('width', width)
+            .attr('height', height);
+
+        // Create a D3.js force-directed graph layout
+        const simulation = d3.forceSimulation(testNodes)
+            .force('link', d3.forceLink().links(testLinks).distance(200).id(d => d.id))
+            .force('charge', d3.forceManyBody())
+            .force('center', d3.forceCenter(width / 3, height / 3));
+
+        // Define how nodes are displayed
+        const node = svg.selectAll('.node')
+            .data(testNodes)
+            .enter()
+            .append('circle')
+            .attr('class', 'node')
+            .attr('r', 20);
+
+        // Create nodes
+        // const nodes = svg.selectAll('.node')
+        //     .data(testNodes)
+        //     .enter().append('circle')
+        //     .attr('class', 'node')
+        //     .attr('r', 20)
+        //     .attr('fill', 'read'); // Set the fill color for better visibility
+        // // .call(d3.drag()
+        // //     .on('start', dragStarted)
+        // //     .on('drag', dragged)
+        // //     .on('end', dragEnded));
+
+        // // ... (other code)
+
+        function dragStarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragEnded(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+
+        // Define how links (relationships) are displayed
+        const link = svg.selectAll('.link')
+            .data(testLinks)
+            .enter()
+            .append('line')
+            .attr('class', 'link');
+
+        simulation
+            .nodes(testNodes)
+            .on('tick', ticked);
+
+        function ticked() {
+            node
+                .attr('cx', d => d.x)
+                .attr('cy', d => d.y);
+
+            link
+                .attr('x1', d => d.source.x)
+                .attr('y1', d => d.source.y)
+                .attr('x2', d => d.target.x)
+                .attr('y2', d => d.target.y);
+        }
+    </script>
+</body>
+
+</html>

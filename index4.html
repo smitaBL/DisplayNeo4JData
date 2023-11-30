@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Force-Directed Graph with Dragging</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        .link {
+            stroke: #999;
+            stroke-opacity: 0.6;
+        }
+
+        .node {
+            stroke: #fff;
+            stroke-width: 1.5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <script>
+        // Define the SVG container dimensions
+        // const width = window.innerWidth;
+        // const height = window.innerHeight;
+
+
+        // // Create SVG container
+        // const svg = d3.select('body').append('svg')
+        //     .attr('width', width)
+        //     .attr('height', height);
+
+        // // Create force simulation
+        // const simulation = d3.forceSimulation()
+        //     .force('charge', d3.forceManyBody().strength(-100))
+        //     .force('center', d3.forceCenter(width / 4, height / 4));
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        // Create an SVG container
+        const svg = d3.select('#graph')
+            .attr('width', width)
+            .attr('height', height);
+
+        // Create a D3.js force-directed graph layout
+        const simulation = d3.forceSimulation()
+            .force('charge', d3.forceManyBody().strength(-100))
+            .force('center', d3.forceCenter(width / 5, height / 5));
+
+        // Fetch data from Neo4j API
+        async function fetchData() {
+            // Replace with your Neo4j API endpoint
+
+            try {
+                let apiUrl = 'http://localhost:3000/api/v1/note/getdata'
+
+                // Fetch data from Neo4j using fetch
+                fetch(apiUrl)
+                    .then(response => {
+                        return response.json()
+
+                            .then(result => {
+                                console.log("result==========>", result.data)
+                                let nodes = [];
+                                let links = [];
+                                result.data.segments.forEach(segment => {
+                                    const startNode = segment.start;
+                                    const endNode = segment.end;
+
+                                    // Add start node
+                                    nodes.push({
+                                        id: startNode.identity.low,
+                                        labels: startNode.labels,
+                                        properties: startNode.properties,
+                                    });
+
+                                    // Add end node
+                                    nodes.push({
+                                        id: endNode.identity.low,
+                                        labels: endNode.labels,
+                                        properties: endNode.properties,
+                                    });
+
+                                    // Extract relationship (link)
+                                    const relationship = segment.relationship;
+                                    links.push({
+                                        source: relationship.start.low,
+                                        target: relationship.end.low,
+                                        type: relationship.type,
+                                        properties: relationship.properties,
+                                    });
+                                });
+
+                                updateSimulation(nodes, links);
+                            })
+                    })
+
+
+
+            } catch (error) {
+                console.error('Error fetching data from Neo4j API:', error);
+            }
+
+
+        }
+
+        // Update the force simulation with new nodes and links
+        function updateSimulation(nodes, links) {
+
+            // Log the nodes and links for verification
+            console.log("Nodes:", nodes);
+            console.log("Links:", links);
+            // Create links
+            const linkElements = svg.selectAll('.link')
+                .data(links)
+                .enter().append('line')
+                .attr('class', 'link');
+
+            // Create nodes
+            const nodeElements = svg.selectAll('.node')
+                .data(nodes)
+                .enter().append('circle')
+                .attr('class', 'node')
+                .attr('r', 10)
+                .attr('fill', 'blue')  // Set a color for the nodes
+
+            // Update the force simulation
+            simulation.nodes(nodes);
+            simulation.force('link', d3.forceLink(links).id(d => d.id).distance(100));
+
+            // Event listener for tick
+            simulation.on('tick', () => {
+                linkElements
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+
+                nodeElements
+                    .attr('cx', d => d.x)
+                    .attr('cy', d => d.y);
+            });
+
+            // Restart the simulation
+            simulation.alpha(1).restart();
+        }
+
+        // Call the fetch function to get data from Neo4j API
+        fetchData();
+
+
+    </script>
+
+</body>
+
+</html>

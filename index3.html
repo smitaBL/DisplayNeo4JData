@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Force-Directed Graph with Dragging</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        .link {
+            stroke: #999;
+            stroke-opacity: 0.6;
+        }
+
+        .node {
+            stroke: #fff;
+            stroke-width: 1.5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <script>
+        // Define the SVG container dimensions
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+
+        // Sample nodes and links data
+        const testNodes = [
+            { id: 1, color: 'red' },
+            { id: 2, color: 'black' },
+            { id: 3, color: 'green' },
+            { id: 4, color: 'orange' },
+            { id: 5, color: 'purple' }
+        ];
+
+        const testLinks = [
+            { source: 1, target: 2 },
+            { source: 1, target: 3 },
+            { source: 3, target: 4 },
+            { source: 1, target: 5 }
+        ];
+
+        // Create SVG container
+        const svg = d3.select('body').append('svg')
+            .attr('width', width)
+            .attr('height', height);
+
+        // Create links
+        const links = svg.selectAll('.link')
+            .data(testLinks)
+            .enter().append('line')
+            .attr('class', 'link');
+
+        // Create nodes
+        const nodes = svg.selectAll('.node')
+            .data(testNodes)
+            .enter().append('circle')
+            .attr('class', 'node')
+            .attr('r', 30)
+            .attr('fill', d => d.color)
+            .call(d3.drag()
+                .on('start', dragStarted)
+                .on('drag', dragged)
+                .on('end', dragEnded));
+
+        // Create force simulation
+        const simulation = d3.forceSimulation(testNodes)
+            .force('link', d3.forceLink(testLinks).id(d => d.id).distance(200))
+            .force('charge', d3.forceManyBody().strength(-100))
+            .force('center', d3.forceCenter(width / 2, height / 2));
+
+        // Tick function to update positions
+        function ticked() {
+            links
+                .attr('x1', d => d.source.x)
+                .attr('y1', d => d.source.y)
+                .attr('x2', d => d.target.x)
+                .attr('y2', d => d.target.y);
+
+            nodes
+                .attr('cx', d => d.x)
+                .attr('cy', d => d.y);
+        }
+
+        // Drag functions
+        function dragStarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragEnded(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+
+        // Event listener for tick
+        simulation.on('tick', ticked);
+
+    </script>
+
+</body>
+
+</html>

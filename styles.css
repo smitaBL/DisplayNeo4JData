@@ -1,0 +1,52 @@
+/* body {
+    font-family: Arial, sans-serif;
+    background-color: #f2f2f2;
+    margin: 0;
+    padding: 0;
+}
+
+.graph-container {
+    display: flex;
+    justify-content: space-between;
+    margin: 20px;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.node {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.relationship {
+    display: flex;
+    align-items: center;
+    margin: 0 10px;
+}
+
+.relationship-type {
+    font-weight: bold;
+}
+
+.label {
+    font-weight: bold;
+}
+
+.property {
+    margin: 5px 0;
+} */
+
+
+/* Add CSS styles for your web page here */
+#graph-container {
+    width: 100%;
+    height: 100vh;
+}
+
+#graph {
+    width: 100%;
+    height: 100%;
+}

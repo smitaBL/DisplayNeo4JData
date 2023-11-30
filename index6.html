@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Force-Directed Graph with Dragging</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        .link {
+            stroke: #999;
+            stroke-opacity: 0.6;
+        }
+
+        .node {
+            stroke-width: 1.5px;
+        }
+    </style>
+</head>
+
+<body>
+    <svg id="graph"></svg>
+
+    <script>
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        const svg = d3.select('#graph')
+            .attr('width', width)
+            .attr('height', height);
+
+        const simulation = d3.forceSimulation()
+            .force('charge', d3.forceManyBody().strength(-200))
+            .force('center', d3.forceCenter(width / 5, height / 5)); // Center the nodes
+
+        async function fetchData() {
+            try {
+                let apiUrl = 'http://localhost:3000/api/v1/note/getdata';
+
+                fetch(apiUrl)
+                    .then(response => {
+                        // if (!response.ok) {
+                        //     throw new Error('Failed to fetch data');
+                        // }
+                        return response.json();
+                    })
+                    .then(result => {
+                        console.log("result==========>", result.data);
+
+                        const nodes = [];
+                        const relationships = [];
+
+                        result.data.forEach(item => {
+                            // Extract nodes
+                            if (item.startNode) {
+                                nodes.push({
+                                    id: item.startNode.identity.low,
+                                    labels: item.startNode.labels,
+                                    properties: item.startNode.properties,
+                                });
+                            }
+
+                            if (item.endNode) {
+                                nodes.push({
+                                    id: item.endNode.identity.low,
+                                    labels: item.endNode.labels,
+                                    properties: item.endNode.properties,
+                                });
+                            }
+
+                            // Extract relationships
+                            if (item.relationship) {
+                                relationships.push({
+                                    id: item.relationship.identity.low,
+                                    startNodeId: item.relationship.start.low,
+                                    endNodeId: item.relationship.end.low,
+                                    type: item.relationship.type,
+                                    properties: item.relationship.properties,
+                                });
+                            }
+                        });
+
+                        updateSimulation(nodes, relationships);
+                    });
+
+            } catch (error) {
+                console.error('Error fetching data from Neo4j API:', error);
+            }
+        }
+
+        function updateSimulation(nodes, links) {
+            console.log("Nodes:", nodes);
+            console.log("Links:", links);
+
+            const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+            const linkElements = svg.selectAll('.link')
+                .data(links)
+                .enter().append('line')
+                .attr('class', 'link');
+
+            const nodeElements = svg.selectAll('.node')
+                .data(nodes)
+                .enter().append('g')
+                .attr('class', 'node');
+
+            nodeElements.append('circle')
+                .attr('r', 30)
+                .attr('fill', d => getNodeColor(d));
+
+            nodeElements.append('text')
+                .text(d => (d.labels.includes('User') || (d.labels.includes('Book') && d.labels.includes('Book_name'))) ? d.properties.Book_name : '')
+                .attr('text-anchor', 'middle')
+                .attr('dy', '0.35em');
+
+            simulation.nodes(nodes);
+            simulation.force('link', d3.forceLink(links).id(d => d.id).distance(300));
+
+            simulation.on('tick', () => {
+                linkElements
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+
+                nodeElements
+                    .attr('transform', d => `translate(${d.x},${d.y})`);
+            });
+
+            simulation.alpha(1).restart();
+        }
+
+        function getNodeColor(node) {
+            const labels = node.labels;
+
+            if (labels.includes('Book')) {
+                return 'green';
+            } else if (labels.includes('User')) {
+                return 'blue';
+            } else {
+                return 'gray';
+            }
+        }
+
+        fetchData();
+    </script>
+</body>
+
+</html>
